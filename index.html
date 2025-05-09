@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>MergeWallet - Solana ZK Username Registry</title>
+    <script>
+      // Block FormFiller extension errors
+      window.addEventListener('error', function(event) {
+        if (event.message.includes('FormFiller') || event.filename.includes('formFiller.js')) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+      
+      // Define global Buffer to prevent "Buffer is not defined" errors
+      window.global = window.global || window;
+      window.Buffer = window.Buffer || { isBuffer: function() { return false; } };
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -10,31 +10,18 @@ import {
 } from "react-router-dom";
 import './App.css'
 import HomePage from './pages/home';
+import Layout from './components/layout';
+import Setting from './pages/settings';
 
 function App() {
 
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route path="/">
-        {/* Redirect root to get-started */}
+      <Route path="/" element={<Layout/>}>
         <Route index element={<HomePage />} />
+        {/* <Route path='setting' element={<Setting/>}/> */}
+
         
-        {/* Get Started page */}
-        {/* <Route path="get-started" element={<GetStarted />} /> */}
-        
-        {/* Main app routes with shared layout */}
-         {/* <Route element={<RootLayout />}> */}
-          {/* <Route path="home" element={<HomePage />} />
-          <Route path="gang" element={<Gang />} />
-          <Route path="casino" element={<Casino />} />
-          <Route path="earn" element={<Earn />} />
-          <Route path="meme" element={<Meme />} />  */}
-        {/* </Route> */}
-        
-        {/* Standalone pages */}
-        {/* <Route path="leaderboard" element={<LeaderBoard />} />
-        <Route path="account" element={<Account />} />
-        <Route path="settings" element={<Settings />} /> */}
       </Route>
     )
   );
@@ -42,8 +29,7 @@ function App() {
     <>
     
       <RouterProvider router={router} />
-      {/* <Toaster position="top-center" reverseOrder={false} /> */}
-    </>
+     </>
   )
 }
 
