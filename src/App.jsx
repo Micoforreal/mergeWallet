@@ -12,17 +12,20 @@ import './App.css'
 import HomePage from './pages/home';
 import Layout from './components/layout';
 import Setting from './pages/settings';
+import CreateAccount from './pages/createAccount';
 
 function App() {
 
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route path="/" element={<Layout/>}>
-        <Route index element={<HomePage />} />
-        {/* <Route path='setting' element={<Setting/>}/> */}
+      <Route path="/" >
+        <Route path="create-account" element={<CreateAccount/>} />
 
         
-      </Route>
+           <Route element={<Layout />}>
+        <Route path='home' exact element={<HomePage />} />
+           </Route>
+          </Route>
     )
   );
   return (

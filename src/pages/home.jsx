@@ -16,6 +16,7 @@ import SwapTokenModal from "@/components/swapTokenModal";
 import { WalletContext } from "@/context/walletConnection";
 import { publicData } from "@/helpers/data";
 import RecieveToken from "@/components/recieveToken";
+import AlertToGetUsername from "@/components/alertToGetUsername";
 
 export default function HomePage() {
     const { 
@@ -351,6 +352,7 @@ export default function HomePage() {
         <div className="text-center py-8 mb-8">
           <div className="text-lg text-gray-700 mb-6">Connect your Solana wallet to get started</div>
           <div className="flex flex-col items-center gap-4">
+
             {hasWalletAdapters ? (
               <WalletMultiButton className="bg-black hover:bg-gray-800 text-white font-normal py-3 px-6 rounded-md transition-colors duration-200 w-full max-w-xs" />
             ) : (
@@ -385,6 +387,7 @@ export default function HomePage() {
             >
               Send
             </Button>
+                        <AlertToGetUsername/>
           <SwapTokenModal/>
           </div>
           
