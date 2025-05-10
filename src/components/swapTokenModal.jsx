@@ -11,8 +11,8 @@ import { Button } from "./ui/button";
 const SwapTokenModal = () => {
   return (
     <>
-      <Dialog>
-        <DialogTrigger>
+      <Dialog >
+        <DialogTrigger asChild>
           <Button
             variant="outline"
             className="text-sm font-normal text-gray-700 border-gray-200 hover:bg-gray-50"

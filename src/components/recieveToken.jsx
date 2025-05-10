@@ -17,7 +17,7 @@ const RecieveToken = () => {
   return (
     <>
       <Drawer>
-        <DrawerTrigger>
+        <DrawerTrigger asChild>
           <Button
             variant="outline"
             className="text-sm font-normal text-gray-700 border-gray-200 hover:bg-gray-50"

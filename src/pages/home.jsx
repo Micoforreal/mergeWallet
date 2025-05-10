@@ -299,10 +299,11 @@ export default function HomePage() {
               {savedUsername ? (
                 <span className="font-medium text-gray-900">@{savedUsername}</span>
               ) : (
+                // <></>
                 <span className="font-medium text-gray-900">{wallet?.adapter?.name || "Solana Wallet"}</span>
               )}
               <div className="flex items-center">
-                <span className="text-xs text-gray-500">{getFormattedAddress()}</span>
+                {/* <span className="text-xs text-gray-500">{getFormattedAddress()}</span> */}
               </div>
             </div>
           ) : (
@@ -387,8 +388,7 @@ export default function HomePage() {
             >
               Send
             </Button>
-                        <AlertToGetUsername/>
-          <SwapTokenModal/>
+          <SwapTokenModal />
           </div>
           
           <div className="border-t pt-4 mt-auto">

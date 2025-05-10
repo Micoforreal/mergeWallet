@@ -1,10 +1,10 @@
-import { Home, Repeat, Settings } from "lucide-react";
+import { Home, Repeat, Settings, ShoppingBag } from "lucide-react";
 
 const Navigation = () => {
   const navLink = [
     { name: "home", logo: <Home /> },
-    // { name: "home", logo: <Home /> },
     { name: "home", logo: <Repeat /> },
+    { name: "home", logo: <ShoppingBag /> },
     { name: "home", logo: <Settings /> },
 
 

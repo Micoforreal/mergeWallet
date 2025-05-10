@@ -13,6 +13,7 @@ import HomePage from './pages/home';
 import Layout from './components/layout';
 import Setting from './pages/settings';
 import CreateAccount from './pages/createAccount';
+import GenerteNewWallet from './pages/generateNewWallet';
 
 function App() {
 
@@ -20,6 +21,7 @@ function App() {
     createRoutesFromElements(
       <Route path="/" >
         <Route path="create-account" element={<CreateAccount/>} />
+            <Route path='generate-new-wallet' exact element={<GenerteNewWallet />} />
 
         
            <Route element={<Layout />}>
