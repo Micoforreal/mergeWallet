@@ -1,164 +1,193 @@
-import { Stepper } from "@/components/ui/stepper";
-import { LockKeyhole, UserCircle, Copy, Check } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
+import { Stepper } from "@/components/ui/stepper";
+import { Check, Copy, Home, LockKeyhole, UserPenIcon } from "lucide-react";
+import { use, useEffect, useState } from "react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Link, useNavigate, useNavigation } from "react-router-dom";
+import * as bip39 from "bip39";
+import * as bip32 from "bip32";
+import { Keypair } from "@solana/web3.js";
+import { ethers } from "ethers";
+import * as bitcoin from "bitcoinjs-lib";
+import { HDKey } from "@scure/bip32";
 
-// Generate a more realistic seed phrase
-const generateMnemonic = () => {
-  const words = [
-    "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", 
-    "absurd", "abuse", "access", "accident", "account", "accuse", "achieve", "acid", 
-    "acoustic", "acquire", "across", "act", "action", "actor", "actual", "adapt"
+const fakePrase = [
+  "abandon",
+  "ability",
+  "able",
+  "about",
+  "above",
+  "absent ",
+  "absorb",
+  "abstract",
+  "bsurd",
+  "abuse",
+  "access",
+  "accident",
+];
+
+const generatekeypair = async (phrase) => {
+  // 12-word phrase
+const seed = await bip39.mnemonicToSeed(phrase); // returns Uint8Array
+  const root = HDKey.fromMasterSeed(seed);
+
+
+  // {"ethereum wallet"}
+  const ethPath = "m/44'/60'/0'/0/0";
+  const ethNode = root.derive(ethPath);
+  const ethWallet = new ethers.Wallet(Buffer.from(ethNode.privateKey).toString('hex'));
+
+  console.log("Ethereum Address:", ethWallet.address);
+
+  // {"solana wallet"}
+  const solPath = "m/44'/501'/0'/0'";
+  const solNode = root.derive(solPath);
+  const solKeypair = Keypair.fromSeed(solNode.privateKey.slice(0, 32));
+
+  console.log("Solana Public Key:", solKeypair.publicKey.toBase58());
+
+  // {"bitcoin wallet"}
+  const btcPath = "m/44'/0'/0'/0/0";
+  const btcNode = root.derive(btcPath);
+  const { address } = bitcoin.payments.p2pkh({ pubkey: Buffer.from(btcNode.publicKey), });
+const btcPrivateKeyHex = Buffer.from(btcNode.privateKey).toString('hex');
+
+  console.log("Bitcoin Address:", address);
+
+  const data = [
+    {
+      chain: "ethereum",
+      symbol: "ETH",
+      address: ethWallet.address,
+        balance: "00",
+        logo: '/ethereum-eth-logo.png',
+
+      privateKey: ethNode.privateKey,
+    },
+    {
+      chain: "solana",
+      symbol: "SOL",
+      address: solKeypair.publicKey.toBase58(),
+       balance: "00",
+        logo: "/solana-sol-logo.png",
+   
+     privateKey: solNode.privateKey,
+    },
+    {
+      chain: "bitcoin",
+      symbol: "BTC",
+      address: address,
+      balance:"00",
+      logo :"/bitcoin-btc-logo.png",
+      privateKey: btcPrivateKeyHex,
+    },
   ];
-  
-  // Select 12 random words
-  const mnemonic = [];
-  for (let i = 0; i < 12; i++) {
-    const randomIndex = Math.floor(Math.random() * words.length);
-    mnemonic.push(words[randomIndex]);
-  }
-  
-  return mnemonic;
+
+  console.log("Generated Wallet Data:", data);
+
+  localStorage.setItem("walletData", JSON.stringify(data));
 };
 
-const seedPhrase = generateMnemonic();
-
-const SavePhraseStep = ({ verificationStatus, setVerificationStatus }) => {
+const SavePhrase = ({ mnemonic }) => {
+  const [verificationStatus, setVerificationStatus] = useState("not-copied");
   const [copied, setCopied] = useState(false);
-  
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(seedPhrase.join(" "));
+    navigator.clipboard.writeText(mnemonic);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    setVerificationStatus('copied');
+    setVerificationStatus("copied");
   };
-  
+
   return (
     <div className="flex flex-col items-center justify-center h-full">
-      <h2 className="text-lg font-semibold mb-2">Save Your Recovery Phrase</h2>
-      <p className="text-center mb-4">This 12-word phrase is the only way to recover your wallet. Keep it somewhere safe and secret.</p>
-      
-      <div className="mt-4 p-4 border rounded-md w-full">
-        <div className="p-2 rounded-md flex flex-wrap gap-2 justify-center">
-          {seedPhrase.map((word, index) => (
-            <div key={index} className="text-sm border p-2 w-20 text-center rounded-md font-medium text-gray-900">
-              {index + 1}. {word}
-            </div>
-          ))}
+      <h2 className="text-lg font-semibold mb-2">Save Your Phrase</h2>
+      <p className="text-center">
+        Make sure to save your phrase in a secure place.
+      </p>
+      <div className="mt-4 p-4 border rounded-md">
+        {/* <p className="text-sm font-medium text-gray-700 mb-2">Your Phrase:</p> */}
+        <div className=" p-2 rounded-md flex flex-wrap gap-x-8 gap-y-6  justify-center">
+          {mnemonic &&
+            mnemonic.split(" ").map((word, index) => (
+              <div
+                key={index}
+                className="text-sm border p-2 w-20 text-center rounded-md font-medium text-gray-900"
+              >
+                {word}
+              </div>
+            ))}
         </div>
       </div>
-      
+
       <div className="mt-4 flex gap-3">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="flex items-center gap-2"
           onClick={copyToClipboard}
         >
-          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          {copied ? (
+            <Check className="w-4 h-4" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
           {copied ? "Copied!" : "Copy Phrase"}
         </Button>
       </div>
-      
-      {verificationStatus === 'copied' && (
+
+      {verificationStatus === "copied" && (
         <p className="mt-4 text-sm text-green-600">
-          Great! Make sure to store this phrase somewhere safe before continuing.
+          Great! Make sure to store this phrase somewhere safe before
+          continuing.
         </p>
       )}
     </div>
   );
 };
 
-const UserDetailsStep = ({ 
-  username, 
-  setUsername, 
-  fullName, 
-  setFullName, 
-  verificationStatus, 
-  setVerificationStatus 
-}) => {
-  const [isChecking, setIsChecking] = useState(false);
-  
-  const checkUsername = () => {
-    if (!username || username.length < 3) {
-      setVerificationStatus('invalid_username');
-      return;
-    }
-    
-    // Simulate username availability check
-    setIsChecking(true);
-    setTimeout(() => {
-      setIsChecking(false);
-      setVerificationStatus(
-        username === 'admin' || username === 'test' 
-          ? 'username_taken' 
-          : 'details_valid'
-      );
-    }, 1000);
-  };
-  
-  return (
-    <div className="flex flex-col items-center justify-center h-full">
-      <h2 className="text-lg font-semibold mb-2">Choose Your Username</h2>
-      <p className="text-center mb-4">This username will identify your wallet in the network.</p>
-      
-      <div className="w-full space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="username">Username (public)</Label>
-          <Input
-            id="username"
-            placeholder="Choose a unique username"
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              setVerificationStatus('pending');
-            }}
-          />
-          
-          {verificationStatus === 'invalid_username' && (
-            <p className="text-sm text-red-600">Username must be at least 3 characters</p>
-          )}
-          
-          {verificationStatus === 'username_taken' && (
-            <p className="text-sm text-red-600">This username is already taken</p>
-          )}
+const createUsername = (setUsernameOption) => (
+  <div className="flex flex-col items-center justify-center h-full">
+    <h2 className="text-lg font-semibold mb-2">Create a Username</h2>
+    <p>Choose a unique username for your wallet.</p>
+    <div className="mt-4 p-4  rounded-md">
+      <ToggleGroup
+        type="single"
+        defaultValue="left"
+        onValueChange={(val) => {
+          setUsernameOption(val);
+        }}
+        className={"flex w-full justify-center items-center"}
+      >
+        <div className="flex flex-  justify-center items-center gap-x-2">
+          <ToggleGroupItem
+            value="create"
+            className="w-40 h-32 border rounded-md
+        "
+          >
+            <span className="text-sm font-normal ">Create a username</span>
+          </ToggleGroupItem>
+          <ToggleGroupItem value="buy" className="w-40 border rounded-md h-32">
+            <span className="text-sm font-normal ]">Buy a username</span>
+          </ToggleGroupItem>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="fullName">Full Name (optional)</Label>
-          <Input
-            id="fullName"
-            placeholder="Your name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-        </div>
-        
-        <Button 
-          className="w-full"
-          onClick={checkUsername}
-          disabled={isChecking}
-        >
-          {isChecking ? 'Checking...' : 'Verify Username'}
-        </Button>
-        
-        {verificationStatus === 'details_valid' && (
-          <p className="mt-4 text-sm text-green-600">
-            Username looks good! You're ready to continue.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-};
+      </ToggleGroup>
 
-const FinishStep = ({ navigate }) => {
+      <p className="text-xs font-normal text-center  text-gray-500 mt-10">
+        Username are NFT's , gas fees a charged when creating a username and it
+        can be sold in the marketplace .
+      </p>
+    </div>
+  </div>
+);
+
+
+
+
+const FinishStep = ({ navigate,mnemonic }) => {
   const [isCreating, setIsCreating] = useState(false);
   
-  const handleFinish = () => {
+  const handleFinish = async () => {
     setIsCreating(true);
+   await generatekeypair(mnemonic)
     // Simulate wallet creation
     setTimeout(() => {
       setIsCreating(false);
@@ -191,122 +220,85 @@ const FinishStep = ({ navigate }) => {
   );
 };
 
-const steps = [
+
+const GenerteNewWallet = () => {
+  const [usernameOption, setUsernameOption] = useState("create");
+  const [mnemonic, setMnemonic] = useState();
+
+    const navigate = useNavigate();
+  const generatePhrase = async () => {
+    const phrase = bip39.generateMnemonic();
+
+    setMnemonic(phrase);
+  };
+  useEffect(() => {
+    generatePhrase();
+  }, []);
+  const steps = [
   { 
     title: "Backup", 
     description: "Save Recovery Phrase", 
-    stepLogo: <LockKeyhole className="w-4 h-4"/> 
-  },
-  { 
+      stepLogo: <LockKeyhole className="w-4 h-4" />,
+      item: <SavePhrase mnemonic={mnemonic} />,
+    },
+     { 
     title: "Profile", 
     description: "Choose Username", 
-    stepLogo: <UserCircle className="w-4 h-4"/> 
-  },
-  { 
+      stepLogo: <UserPenIcon className="w-4 h-4" />,
+      item: createUsername(setUsernameOption),
+    },
+     { 
     title: "Finish", 
     description: "Complete Setup", 
-    stepLogo: <Check className="w-4 h-4"/> 
-  }
-];
-
-const GenerateNewWallet = () => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const navigate = useNavigate();
-  
-  // Form state
-  const [username, setUsername] = useState('');
-  const [fullName, setFullName] = useState('');
-  
-  // Verification status for each step
-  const [step1Status, setStep1Status] = useState('pending');
-  const [step2Status, setStep2Status] = useState('pending');
-  
-  // Determine if the next button should be enabled
-  const canGoNext = () => {
-    if (currentStep === 0) return step1Status === 'copied';
-    if (currentStep === 1) return step2Status === 'details_valid';
-    return true;
-  };
-  
-  // Handle step changes with validation
-  const handleStepChange = (newStep) => {
-    // Going backward is always allowed
-    if (newStep < currentStep) {
-      setCurrentStep(newStep);
-      return;
-    }
+    stepLogo: <Check className="w-4 h-4"/> ,
+    item:  <FinishStep navigate={navigate} mnemonic={mnemonic}/>
     
-    // Going forward requires validation
-    if (canGoNext()) {
-      setCurrentStep(newStep);
-    }
-  };
-  
-  // Render the current step content
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <SavePhraseStep 
-            verificationStatus={step1Status} 
-            setVerificationStatus={setStep1Status}
-          />
-        );
-      case 1:
-        return (
-          <UserDetailsStep
-            username={username}
-            setUsername={setUsername}
-            fullName={fullName}
-            setFullName={setFullName}
-            verificationStatus={step2Status}
-            setVerificationStatus={setStep2Status}
-          />
-        );
-      case 2:
-        return <FinishStep navigate={navigate} />;
-      default:
-        return null;
-    }
-  };
-  
+  }
+    // {  description: "Verify your email", stepLogo:<Home className="w-4 h-4"/>, item:"2"},
+    // { title: "Step 4", description: "Confirm and finish" },
+  ];
+  const [currentStep, setCurrentStep] = useState(0);
+
   return (
-    <div className="container max-w-md mx-auto py-10 px-4">
+    <div className="container max-w-md mx-auto py-10">
       <h1 className="text-2xl font-bold mb-8 text-center">Generate Wallet</h1>
-      
-      <div className="mb-8">
-        <Stepper 
-          steps={steps} 
-          className="flex-row" 
-          currentStep={currentStep} 
-          onStepChange={handleStepChange}
-        />
+      <div className="">
+        <Stepper
+          steps={steps}
+          className={"flex-row"}
+          currentStep={currentStep}
+          onStepChange={setCurrentStep}
+        ></Stepper>
       </div>
-      
-      <div className="mt-8 p-4 border rounded-md min-h-[400px]">
-        {renderStepContent()}
+      <div className="mt-8 p-4 border rounded-md">
+        {steps[currentStep].item}
       </div>
-      
-      <div className="mt-6 flex justify-between">
-        <Button 
-          variant="outline" 
-          onClick={() => handleStepChange(currentStep - 1)} 
-          disabled={currentStep === 0}
+
+      {steps[currentStep].description === "Add your details" && (
+        <div className="flex justify-end my-7 ">
+          <Link to={"/home"}>
+            <Button
+              variant="outline"
+              className={""}
+              onClick={() => setCurrentStep(currentStep - 1)}
+              disabled={currentStep === 0}
+            >
+              Skip
+            </Button>
+          </Link>
+        </div>
+      )}
+      <div className="flex justify-between my-7 mb-auto">
+        <Button
+          className={"w-full rounded-xl"}
+          onClick={() => setCurrentStep(currentStep + 1)}
+          disabled={currentStep === steps.length - 1}
         >
-          Previous
+          {currentStep === steps.length - 1 ? "Finish" : "Next"}
         </Button>
-        
-        {currentStep < 2 ? (
-          <Button 
-            onClick={() => handleStepChange(currentStep + 1)} 
-            disabled={!canGoNext()}
-          >
-            Next
-          </Button>
-        ) : null}
       </div>
     </div>
   );
 };
 
-export default GenerateNewWallet;
+export default GenerteNewWallet;
