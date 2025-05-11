@@ -12,7 +12,7 @@ import './App.css'
 import HomePage from './pages/home';
 import Layout from './components/layout';
 import Setting from './pages/settings';
-import CreateAccount from './pages/createAccount';
+import CreateAccount from './pages/getStarted';
 import GenerteNewWallet from './pages/generateNewWallet';
 
 function App() {
@@ -20,7 +20,7 @@ function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" >
-        <Route path="create-account" element={<CreateAccount/>} />
+        <Route path="get-started" element={<CreateAccount/>} />
             <Route path='generate-new-wallet' exact element={<GenerteNewWallet />} />
 
         
