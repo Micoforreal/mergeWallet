@@ -12,7 +12,7 @@ import './App.css'
 import HomePage from './pages/home';
 import Layout from './components/layout';
 import Setting from './pages/settings';
-import CreateAccount from './pages/getStarted';
+import CreateAccount from './pages/createAccount';
 import GenerteNewWallet from './pages/generateNewWallet';
 
 function App() {
