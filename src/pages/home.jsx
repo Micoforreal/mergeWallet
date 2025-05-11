@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useSolanaWallet } from "@/helpers/connectSolanaWallet";
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useState, useEffect, useCallback,useContext } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
 import LightProtocolService from "@/services/LightProtocolService";
 import config from '@/config/lightProtocol';
 import SwapTokenModal from "@/components/swapTokenModal";
@@ -17,6 +17,8 @@ import { WalletContext } from "@/context/walletConnection";
 import { publicData } from "@/helpers/data";
 import RecieveToken from "@/components/recieveToken";
 import AlertToGetUsername from "@/components/alertToGetUsername";
+import FallbackStorageAlert from "@/components/FallbackStorageAlert";
+import BackupRestoreUsername from "@/components/BackupRestoreUsername";
 
 export default function HomePage() {
     const { 
@@ -30,8 +32,8 @@ export default function HomePage() {
       getFormattedAddress 
     } = useSolanaWallet();
     
-    // Light Protocol service for username storage
-    const [lightService] = useState(() => new LightProtocolService());
+    // Use the LightProtocolService singleton
+    const lightService = LightProtocolService;
     
     // User information state
     const [username, setUsername] = useState('');
@@ -42,6 +44,7 @@ export default function HomePage() {
     const [errorMessage, setErrorMessage] = useState('');
     const [savedUsername, setSavedUsername] = useState('');
     const [registrationStep, setRegistrationStep] = useState('initial'); // 'initial', 'creating-account', 'minting'
+    const [usingFallbackStorage, setUsingFallbackStorage] = useState(false);
     
     // Modal states for wallet actions
     const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -56,6 +59,37 @@ export default function HomePage() {
     const [isUsernameValid, setIsUsernameValid] = useState(false);
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
     
+    // Add these new state variables after the existing ones
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('');
+    
+    // Add after other state variables
+    const [isOnline, setIsOnline] = useState(window.navigator.onLine);
+    
+    // Add network status listeners
+    useEffect(() => {
+      const handleOnline = () => {
+        setIsOnline(true);
+        setErrorMessage(''); // Clear any network-related errors
+        // Show a temporary notification
+        alert('Network connection restored. You can now try blockchain operations again.');
+      };
+      
+      const handleOffline = () => {
+        setIsOnline(false);
+        // Show a temporary notification
+        setErrorMessage('Network connection lost. Using local storage until connection is restored.');
+      };
+      
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+      
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }, []);
+    
     // Clear error message when wallet connection changes
     useEffect(() => {
       if (walletError) {
@@ -65,14 +99,13 @@ export default function HomePage() {
       }
     }, [walletError]);
 
-    const connect = async ()=>{
-      setWalletData(publicData)
-    }
+    const connect = async () => {
+      setWalletData(publicData);
+    };
 
-    useEffect(()=>{
-      connect()
-
-    },[])
+    useEffect(() => {
+      connect();
+    }, []);
     
     // Check if we need to show the username modal and load existing username
     useEffect(() => {
@@ -80,6 +113,15 @@ export default function HomePage() {
         // Try to load existing username
         const fetchUsername = async () => {
           try {
+            setIsLoading(true);
+            setLoadingMessage('Checking username...');
+            setErrorMessage('');
+            
+            // Check for fallback storage use
+            const isFallback = await lightService.isUsingFallbackStorage(publicKey);
+            setUsingFallbackStorage(isFallback);
+            
+            // Get username
             const existingUsername = await lightService.getUsername(publicKey);
             
             if (existingUsername) {
@@ -88,10 +130,15 @@ export default function HomePage() {
             } else {
               // No username found for this wallet, show the modal
               setShowUsernameModal(true);
+              setSavedUsername('');
             }
           } catch (error) {
             console.error("Error fetching username:", error);
+            setErrorMessage("Failed to load username: " + (error.message || "Unknown error"));
             setShowUsernameModal(true);
+          } finally {
+            setIsLoading(false);
+            setLoadingMessage('');
           }
         };
         
@@ -99,8 +146,9 @@ export default function HomePage() {
       } else {
         setShowUsernameModal(false);
         setSavedUsername('');
+        setUsingFallbackStorage(false);
       }
-    }, [connected, publicKey, lightService]);
+    }, [connected, publicKey]);
     
     // Handle wallet connection
     const handleConnectWallet = async () => {
@@ -138,6 +186,7 @@ export default function HomePage() {
         setIsSubmitting(true);
         setErrorMessage('');
         setRegistrationStep('creating-account');
+        setLoadingMessage('Checking if username is available...');
         
         // Check if username already exists
         const exists = await lightService.usernameExists(username);
@@ -149,25 +198,85 @@ export default function HomePage() {
         }
         
         // Initialize Light Account if needed
+        setLoadingMessage('Initializing wallet...');
         await lightService.initLightAccount(publicKey);
         
         // Create a compressed NFT for the username
         setRegistrationStep('minting');
-        await lightService.createUsernameNFT(publicKey, username);
+        setLoadingMessage('Registering username on blockchain...');
+        const result = await lightService.createUsernameNFT(publicKey, username);
+        
+        // Check if fallback storage was used
+        setUsingFallbackStorage(result.metadata.fallback === true);
         
         // Username saved successfully
         setSavedUsername(username);
         setShowUsernameModal(false);
         setRegistrationStep('initial');
         
+        // Show appropriate success message
+        if (result.metadata.fallback) {
+          // Username stored locally
+          setLoadingMessage('');
+          // Will show the fallback alert instead
+        } else {
+          // Username registered on blockchain
+          setLoadingMessage('');
+          alert(`Username @${username} successfully registered on the blockchain!`);
+        }
       } catch (error) {
         console.error('Error saving username:', error);
         setErrorMessage('Failed to save username: ' + error.message);
         setRegistrationStep('initial');
       } finally {
         setIsSubmitting(false);
+        setLoadingMessage('');
       }
-    }, [username, publicKey, lightService]);
+    }, [username, publicKey]);
+    
+    // Retry blockchain registration
+    const handleRetryBlockchainRegistration = async () => {
+      if (!savedUsername || !publicKey) {
+        setErrorMessage('No username to register');
+        return;
+      }
+      
+      try {
+        setIsSubmitting(true);
+        setLoadingMessage('Attempting to register on blockchain...');
+        setErrorMessage('');
+        
+        // Force Light Protocol to try again by temporarily setting useFallback to false
+        lightService.useFallback = false;
+        
+        // Create a compressed NFT for the username
+        const result = await lightService.createUsernameNFT(publicKey, savedUsername);
+        
+        // Check if fallback storage was still used
+        setUsingFallbackStorage(result.metadata.fallback === true);
+        
+        if (!result.metadata.fallback) {
+          alert("Username successfully registered on the blockchain!");
+        } else {
+          setErrorMessage("Blockchain registration failed again. Please try later when network conditions improve.");
+        }
+      } catch (error) {
+        console.error('Error during blockchain registration retry:', error);
+        setErrorMessage('Failed to register username: ' + error.message);
+      } finally {
+        setIsSubmitting(false);
+        setLoadingMessage('');
+      }
+    };
+    
+    // Handle username restoration
+    const handleUsernameRestored = (restoredUsername) => {
+      setSavedUsername(restoredUsername);
+      alert(`Username @${restoredUsername} has been restored successfully!`);
+      
+      // Refresh fallback status
+      lightService.isUsingFallbackStorage(publicKey).then(setUsingFallbackStorage);
+    };
     
     // Handle wallet actions
     const handleReceive = () => {
@@ -177,7 +286,6 @@ export default function HomePage() {
     const handleSend = () => {
       setShowSendModal(true);
     };
-
     
     // Close all modals
     const closeAllModals = () => {
@@ -197,7 +305,7 @@ export default function HomePage() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Check if username exists (mock)
-        const usernameExists = recipientUsername.length > 2; // Simplified check
+        const usernameExists = recipientUsername.length > 2 && recipientUsername !== 'notfound';
         
         if (!usernameExists) {
           throw new Error('Username not found. Please check and try again.');
@@ -231,17 +339,15 @@ export default function HomePage() {
       setIsCheckingUsername(true);
       
       try {
-        // Simulate API call to check username
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // For demo, assume all usernames with length > 2 exist except "notfound"
-        const exists = username.length > 2 && username !== 'notfound';
+        // Try to use actual username check
+        const exists = await lightService.usernameExists(username);
         setIsUsernameValid(exists);
         return exists;
       } catch {
-        // Error ignored but we set username as invalid
-        setIsUsernameValid(false);
-        return false;
+        // Fallback to mock behavior if the real check fails
+        const exists = username.length > 2 && username !== 'notfound';
+        setIsUsernameValid(exists);
+        return exists;
       } finally {
         setIsCheckingUsername(false);
       }
@@ -299,7 +405,6 @@ export default function HomePage() {
               {savedUsername ? (
                 <span className="font-medium text-gray-900">@{savedUsername}</span>
               ) : (
-                // <></>
                 <span className="font-medium text-gray-900">{wallet?.adapter?.name || "Solana Wallet"}</span>
               )}
               <div className="flex items-center">
@@ -310,8 +415,25 @@ export default function HomePage() {
             <span className="font-medium text-gray-500">Not Connected</span>
           )}
         </div>
-        <Badge variant="outline" className="text-xs font-normal border-gray-200 text-gray-600">devnet</Badge>
+        <div className="flex items-center gap-2">
+          {!isOnline && (
+            <Badge variant="outline" className="text-xs font-normal border-red-200 bg-red-50 text-red-600">
+              Offline
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-xs font-normal border-gray-200 text-gray-600">devnet</Badge>
+        </div>
       </div>
+      
+      {/* Show fallback storage alert if needed */}
+      {usingFallbackStorage && savedUsername && (
+        <FallbackStorageAlert 
+          isFallback={usingFallbackStorage} 
+          username={savedUsername}
+          onRetry={handleRetryBlockchainRegistration}
+          onDismiss={() => setUsingFallbackStorage(false)}
+        />
+      )}
       
       {connected ? (
         <div className="text-center mb-8">
@@ -346,6 +468,18 @@ export default function HomePage() {
               >
                 Set Username
               </Button>
+            </div>
+          )}
+          
+          {/* Add backup/restore button when username exists */}
+          {savedUsername && connected && (
+            <div className="mt-3">
+              <BackupRestoreUsername 
+                lightService={lightService}
+                publicKey={publicKey}
+                username={savedUsername}
+                onRestoreComplete={handleUsernameRestored}
+              />
             </div>
           )}
         </div>
@@ -397,282 +531,54 @@ export default function HomePage() {
                 {walletData && (
                 <>
                 {walletData.map((item)=>(
-                 <div className="flex  w-full border rounded-lg items-center">
-                 <Avatar className={'ms-3'}>
-             <AvatarImage src={item.logo} alt={`coin icon`} />
-            
-             <AvatarFallback></AvatarFallback>
-             </Avatar>
-             <div>
-               <div className="px-4">
-
-             <div className="font-semibold capitalize">
-             {item.chain}
-             </div>
-             <div className="text-muted-foreground">{item.balance} <span>{item.symbol}</span> </div>
-               </div>
-       
-             
-             </div>
-             <div className="ms-auto me-3">
-             <div className="font-semibold ">${item.balance}</div>
-             {/* <Badge variant="destructive">-4.63%</Badge> */}
-             </div>
-               </div>
-           
-
+                  <div key={item.symbol} className="flex items-center border rounded-lg p-2 justify-between">
+                    <div className="flex items-center">
+                  <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                    <img src={item.logo} alt={item.symbol} className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-medium text-gray-900">{item.symbol}</span>
+                    <div className="text-xs text-gray-500">{item?.address?.slice(0, 6)}...{item?.address?.slice(-4)}</div>
+                  </div>
+                </div>
+                <div className="font-medium text-gray-900 mr-2">00 {item.symbol}</div>
+                  </div>
                 ))}
-
                 </>
-              )}
+                )}
               </div>
-             
             </div>
           </div>
         </>
       )}
-
-      {/* Username Modal */}
+      
+      {/* Set Username Modal */}
       {showUsernameModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Set Your Username</h2>
-            <p className="text-gray-600 mb-4 text-sm">
-              Choose a username for your wallet. This will be your identity for sending and receiving SOL.
-            </p>
-            
-            <div className="mb-4">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
-                  @
-                </span>
-                <input
-                  type="text"
-                  id="username"
-                  className="w-full pl-7 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-gray-900"
-                  placeholder="your-username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              {errorMessage && (
-                <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
-              )}
-            </div>
-            
-            <div className="mb-6 p-3 bg-gray-50 rounded-md">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Benefits of setting a username:</h3>
-              <ul className="space-y-2 text-xs text-gray-600">
-                <li className="flex items-start">
-                  <CheckIcon className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                  <span>Friends can send you SOL using @{username || 'username'} instead of your wallet address</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckIcon className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                  <span>Your username is saved as a compressed NFT using Light Protocol</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckIcon className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                  <span>Usernames make transactions social and easy to remember</span>
-                </li>
-              </ul>
-            </div>
-            
-            {isSubmitting && (
-              <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                <p className="text-sm font-medium text-gray-600 mb-2">
-                  {registrationStep === 'creating-account' 
-                    ? 'Creating Light Account...' 
-                    : 'Minting username as compressed NFT...'}
-                </p>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div 
-                    className="bg-black h-1.5 rounded-full transition-all duration-300"
-                    style={{ width: registrationStep === 'creating-account' ? '40%' : '80%' }}
-                  ></div>
-                </div>
-              </div>
-            )}
-            
-            <div className="flex justify-end space-x-3">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  disconnectWallet();
-                  setShowUsernameModal(false);
-                }}
-                className="border-gray-200 text-gray-700 hover:bg-gray-50"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveUsername}
-                disabled={isSubmitting || !username.trim()}
-                className="bg-black hover:bg-gray-800 text-white"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Username'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Receive Modal */}
-      {showReceiveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Receive with Username</h2>
-            <p className="text-gray-600 mb-4 text-sm">
-              Share your username to receive SOL or tokens.
-            </p>
-            
-            <div className="mb-6 p-4 bg-gray-50 rounded-md">
-              <p className="text-sm font-medium text-gray-700 mb-2">Your Light Protocol username:</p>
-              {savedUsername ? (
-                <div className="flex items-center justify-between">
-                  <div className="bg-black text-white px-3 py-2 rounded-md font-medium">
-                    @{savedUsername}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-2 text-gray-600"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`@${savedUsername}`);
-                      alert('Username copied to clipboard!');
-                    }}
-                  >
-                    <CopyIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-red-500 text-sm">
-                  You need to set a username first to receive payments.
-                </div>
-              )}
-              
-              <p className="mt-4 text-xs text-gray-500">
-                Users can send you SOL by entering your username instead of your wallet address.
-              </p>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                onClick={closeAllModals}
-                className="border-gray-200 text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
+        <AlertToGetUsername
+          open={showUsernameModal}
+          onOpenChange={setShowUsernameModal}
+          onSave={handleSaveUsername}
+          username={username}
+          setUsername={setUsername}
+          isSubmitting={isSubmitting}
+          errorMessage={errorMessage}
+          registrationStep={registrationStep}
+        />
       )}
       
-      {/* Send Modal */}
-      {showSendModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Send with Username</h2>
-            <p className="text-gray-600 mb-4 text-sm">
-              Enter the recipient's username and amount to send.
-            </p>
-            
-            <div className="mb-4">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Recipient Username
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
-                  @
-                </span>
-                <input
-                  type="text"
-                  id="username"
-                  className={`w-full pl-7 px-3 py-2 border ${isUsernameValid ? 'border-green-300' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-black text-gray-900`}
-                  placeholder="username"
-                  value={recipientUsername}
-                  onChange={(e) => setRecipientUsername(e.target.value)}
-                  disabled={isSubmitting}
-                />
-                {isCheckingUsername && (
-                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  </span>
-                )}
-                {!isCheckingUsername && isUsernameValid && recipientUsername && (
-                  <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-green-500">
-                    <CheckIcon className="h-4 w-4" />
-                  </span>
-                )}
-              </div>
-              {recipientUsername && !isCheckingUsername && !isUsernameValid && (
-                <p className="mt-1 text-xs text-red-500">
-                  Username not found
-                </p>
-              )}
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-                Amount (SOL)
-              </label>
-              <input
-                type="number"
-                id="amount"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-gray-900"
-                placeholder="0.00"
-                value={sendAmount}
-                onChange={(e) => setSendAmount(e.target.value)}
-                disabled={isSubmitting}
-                min="0"
-                step="0.001"
-              />
-            </div>
-            
-            {errorMessage && (
-              <div className="mb-4 p-3 bg-red-50 rounded-md border border-red-100">
-                <p className="text-sm text-red-600">{errorMessage}</p>
-              </div>
-            )}
-            
-            <div className="flex justify-end space-x-3">
-              <Button
-                variant="outline"
-                onClick={closeAllModals}
-                className="border-gray-200 text-gray-700 hover:bg-gray-50"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={executeSendTransaction}
-                disabled={isSubmitting || !recipientUsername || !sendAmount || !isUsernameValid}
-                className="bg-black hover:bg-gray-800 text-white"
-              >
-                {isSubmitting ? (
-                  isCheckingUsername ? 'Checking username...' : 'Sending...'
-                ) : (
-                  'Send SOL'
-                )}
-              </Button>
+      {/* Show loading indicator when needed */}
+      {(isLoading || isSubmitting) && loadingMessage && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-4"></div>
+              <p className="text-sm text-center">{loadingMessage}</p>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Swap Modal */}
-    
     </div>
-  )
+  );
 }
 
 function CopyIcon(props) {
@@ -695,7 +601,6 @@ function CopyIcon(props) {
   )
 }
 
-
 function CheckIcon(props) {
   return (
     <svg
@@ -714,7 +619,6 @@ function CheckIcon(props) {
     </svg>
   )
 }
-
 
 function XIcon(props) {
   return (

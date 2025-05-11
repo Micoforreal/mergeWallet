@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merge Wallet Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+    
+    .button {
+      background-color: #4a5568;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .button:hover {
+      background-color: #2d3748;
+    }
+    
+    .app-frame {
+      width: 100%;
+      height: 700px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Merge Wallet Test Suite</h1>
+    
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>Testing Instructions</h2>
+          <p>Use this page to test the wallet functionality. The iframe on the right shows the app running locally.</p>
+          
+          <h3>Test Flows:</h3>
+          <ol>
+            <li>Create a new wallet - Test the full flow from seed phrase to wallet dashboard</li>
+            <li>Verify each step works correctly - Make sure validation and navigation work as expected</li>
+            <li>Test error cases - Try invalid usernames, etc.</li>
+          </ol>
+          
+          <h3>Common Issues:</h3>
+          <ul>
+            <li>If the app doesn't load, make sure the development server is running with <code>npm run dev</code></li>
+            <li>Check for console errors in the browser developer tools</li>
+            <li>If the navigation doesn't work, check the React Router configuration</li>
+          </ul>
+        </div>
+        
+        <div class="card">
+          <h2>Test Actions</h2>
+          <button class="button" onclick="window.open('http://localhost:5173/create-account', '_blank')">Open Create Account</button>
+          <button class="button" onclick="window.open('http://localhost:5173/generate-new-wallet', '_blank')">Open Generate Wallet</button>
+          <button class="button" onclick="document.getElementById('appFrame').src = 'http://localhost:5173'">Reload App</button>
+          <button class="button" onclick="toggleDevTools()">Toggle DevTools</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h2>App Preview</h2>
+        <iframe src="http://localhost:5173" class="app-frame" id="appFrame"></iframe>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    function toggleDevTools() {
+      // This is a simple attempt to toggle dev tools - not guaranteed to work in all browsers
+      console.log('Attempting to toggle developer tools');
+      try {
+        if (window.devToolsOpen) {
+          console.log('Attempting to close dev tools');
+        } else {
+          console.log('Attempting to open dev tools');
+          // This weird error will open devtools in some browsers
+          (function() { throw new Error('Open DevTools'); })();
+        }
+        window.devToolsOpen = !window.devToolsOpen;
+      } catch (e) {
+        console.log('Toggle attempt complete');
+      }
+    }
+  </script>
+</body>
+</html> 

@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import {
   createBrowserRouter,
   createRoutesFromElements,
@@ -13,21 +10,22 @@ import HomePage from './pages/home';
 import Layout from './components/layout';
 import Setting from './pages/settings';
 import CreateAccount from './pages/createAccount';
-import GenerteNewWallet from './pages/generateNewWallet';
+import GenerateNewWallet from './pages/generateNewWallet';
 
 function App() {
 
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" >
+        <Route index element={<Navigate to="/create-account" replace />} />
         <Route path="create-account" element={<CreateAccount/>} />
-            <Route path='generate-new-wallet' exact element={<GenerteNewWallet />} />
+        <Route path='generate-new-wallet' exact element={<GenerateNewWallet />} />
 
         
-           <Route element={<Layout />}>
-        <Route path='home' exact element={<HomePage />} />
-           </Route>
-          </Route>
+        <Route element={<Layout />}>
+          <Route path='home' exact element={<HomePage />} />
+        </Route>
+      </Route>
     )
   );
   return (
