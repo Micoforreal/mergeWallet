@@ -1,36 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Stepper } from "@/components/ui/stepper";
 import { Check, Copy, Home, LockKeyhole, UserPenIcon } from "lucide-react";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Link, useNavigate, useNavigation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as bip39 from "bip39";
-import * as bip32 from "bip32";
+import { HDKey } from "@scure/bip32";
 import { Keypair } from "@solana/web3.js";
 import { ethers } from "ethers";
 import * as bitcoin from "bitcoinjs-lib";
-import { HDKey } from "@scure/bip32";
-
-const fakePrase = [
-  "abandon",
-  "ability",
-  "able",
-  "about",
-  "above",
-  "absent ",
-  "absorb",
-  "abstract",
-  "bsurd",
-  "abuse",
-  "access",
-  "accident",
-];
+import { Buffer } from 'buffer';
 
 const generatekeypair = async (phrase) => {
   // 12-word phrase
-const seed = await bip39.mnemonicToSeed(phrase); // returns Uint8Array
+  const seed = await bip39.mnemonicToSeed(phrase); // returns Uint8Array
   const root = HDKey.fromMasterSeed(seed);
-
 
   // {"ethereum wallet"}
   const ethPath = "m/44'/60'/0'/0/0";
@@ -46,46 +30,70 @@ const seed = await bip39.mnemonicToSeed(phrase); // returns Uint8Array
 
   console.log("Solana Public Key:", solKeypair.publicKey.toBase58());
 
-  // {"bitcoin wallet"}
-  const btcPath = "m/44'/0'/0'/0/0";
-  const btcNode = root.derive(btcPath);
-  const { address } = bitcoin.payments.p2pkh({ pubkey: Buffer.from(btcNode.publicKey), });
-const btcPrivateKeyHex = Buffer.from(btcNode.privateKey).toString('hex');
+  try {
+    // {"bitcoin wallet"}
+    const btcPath = "m/44'/0'/0'/0/0";
+    const btcNode = root.derive(btcPath);
+    const { address } = bitcoin.payments.p2pkh({ pubkey: Buffer.from(btcNode.publicKey) });
+    const btcPrivateKeyHex = Buffer.from(btcNode.privateKey).toString('hex');
 
-  console.log("Bitcoin Address:", address);
+    console.log("Bitcoin Address:", address);
 
-  const data = [
-    {
-      chain: "ethereum",
-      symbol: "ETH",
-      address: ethWallet.address,
+    const data = [
+      {
+        chain: "ethereum",
+        symbol: "ETH",
+        address: ethWallet.address,
         balance: "00",
         logo: '/ethereum-eth-logo.png',
-
-      privateKey: ethNode.privateKey,
-    },
-    {
-      chain: "solana",
-      symbol: "SOL",
-      address: solKeypair.publicKey.toBase58(),
-       balance: "00",
+        privateKey: ethNode.privateKey,
+      },
+      {
+        chain: "solana",
+        symbol: "SOL",
+        address: solKeypair.publicKey.toBase58(),
+        balance: "00",
         logo: "/solana-sol-logo.png",
-   
-     privateKey: solNode.privateKey,
-    },
-    {
-      chain: "bitcoin",
-      symbol: "BTC",
-      address: address,
-      balance:"00",
-      logo :"/bitcoin-btc-logo.png",
-      privateKey: btcPrivateKeyHex,
-    },
-  ];
+        privateKey: solNode.privateKey,
+      },
+      {
+        chain: "bitcoin",
+        symbol: "BTC",
+        address: address,
+        balance:"00",
+        logo :"/bitcoin-btc-logo.png",
+        privateKey: btcPrivateKeyHex,
+      },
+    ];
 
-  console.log("Generated Wallet Data:", data);
+    console.log("Generated Wallet Data:", data);
+    localStorage.setItem("walletData", JSON.stringify(data));
+  } catch (error) {
+    console.error("Error generating Bitcoin address:", error);
+    
+    // Still save Ethereum and Solana data if Bitcoin fails
+    const data = [
+      {
+        chain: "ethereum",
+        symbol: "ETH",
+        address: ethWallet.address,
+        balance: "00",
+        logo: '/ethereum-eth-logo.png',
+        privateKey: ethNode.privateKey,
+      },
+      {
+        chain: "solana",
+        symbol: "SOL",
+        address: solKeypair.publicKey.toBase58(),
+        balance: "00",
+        logo: "/solana-sol-logo.png",
+        privateKey: solNode.privateKey,
+      },
+    ];
 
-  localStorage.setItem("walletData", JSON.stringify(data));
+    console.log("Generated Wallet Data (without Bitcoin):", data);
+    localStorage.setItem("walletData", JSON.stringify(data));
+  }
 };
 
 const SavePhrase = ({ mnemonic }) => {
@@ -144,16 +152,18 @@ const SavePhrase = ({ mnemonic }) => {
   );
 };
 
-const createUsername = (setUsernameOption) => (
+const createUsername = (onUsernameOptionChange) => (
   <div className="flex flex-col items-center justify-center h-full">
     <h2 className="text-lg font-semibold mb-2">Create a Username</h2>
     <p>Choose a unique username for your wallet.</p>
     <div className="mt-4 p-4  rounded-md">
       <ToggleGroup
         type="single"
-        defaultValue="left"
+        defaultValue="create"
         onValueChange={(val) => {
-          setUsernameOption(val);
+          if (onUsernameOptionChange) {
+            onUsernameOptionChange(val);
+          }
         }}
         className={"flex w-full justify-center items-center"}
       >
@@ -179,15 +189,12 @@ const createUsername = (setUsernameOption) => (
   </div>
 );
 
-
-
-
-const FinishStep = ({ navigate,mnemonic }) => {
+const FinishStep = ({ navigate, mnemonic }) => {
   const [isCreating, setIsCreating] = useState(false);
   
   const handleFinish = async () => {
     setIsCreating(true);
-   await generatekeypair(mnemonic)
+    await generatekeypair(mnemonic)
     // Simulate wallet creation
     setTimeout(() => {
       setIsCreating(false);
@@ -220,42 +227,44 @@ const FinishStep = ({ navigate,mnemonic }) => {
   );
 };
 
-
 const GenerteNewWallet = () => {
   const [usernameOption, setUsernameOption] = useState("create");
   const [mnemonic, setMnemonic] = useState();
 
-    const navigate = useNavigate();
+  // Use the username option to log the selection
+  useEffect(() => {
+    console.log("Username option selected:", usernameOption);
+  }, [usernameOption]);
+
+  const navigate = useNavigate();
   const generatePhrase = async () => {
     const phrase = bip39.generateMnemonic();
-
     setMnemonic(phrase);
   };
+  
   useEffect(() => {
     generatePhrase();
   }, []);
+  
   const steps = [
-  { 
-    title: "Backup", 
-    description: "Save Recovery Phrase", 
+    { 
+      title: "Backup", 
+      description: "Save Recovery Phrase", 
       stepLogo: <LockKeyhole className="w-4 h-4" />,
       item: <SavePhrase mnemonic={mnemonic} />,
     },
-     { 
-    title: "Profile", 
-    description: "Choose Username", 
+    { 
+      title: "Profile", 
+      description: "Choose Username", 
       stepLogo: <UserPenIcon className="w-4 h-4" />,
       item: createUsername(setUsernameOption),
     },
-     { 
-    title: "Finish", 
-    description: "Complete Setup", 
-    stepLogo: <Check className="w-4 h-4"/> ,
-    item:  <FinishStep navigate={navigate} mnemonic={mnemonic}/>
-    
-  }
-    // {  description: "Verify your email", stepLogo:<Home className="w-4 h-4"/>, item:"2"},
-    // { title: "Step 4", description: "Confirm and finish" },
+    { 
+      title: "Finish", 
+      description: "Complete Setup", 
+      stepLogo: <Check className="w-4 h-4"/> ,
+      item: <FinishStep navigate={navigate} mnemonic={mnemonic}/>
+    }
   ];
   const [currentStep, setCurrentStep] = useState(0);
 
