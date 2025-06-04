@@ -13,9 +13,6 @@ import CreateAccount from "./pages/getStarted";
 import GenerateNewWallet from "./pages/generateNewWallet";
 import ImportWallet from "./pages/importWallet";
 
-
-
-
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(

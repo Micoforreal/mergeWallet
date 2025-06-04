@@ -1,13 +1,10 @@
 {
-    "rewrites": [
-      { "source": "/get-started", "destination": "/get-started" },
-      { "source": "/home", "destination": "/home" },
-
-      { "source": "/import-wallet", "destination": "/import-wallet" },
-            { "source": "/generate-new-wallet", "destination": "/generate-new-wallet" },
-      { "source": "/settings", "destination": "/settings" },
-      { "source": "/(.*)", "destination": "/" }
-    
-    ]
-  }
-  
+  "rewrites": [
+    { "source": "/get-started", "destination": "/get-started" },
+    { "source": "/home", "destination": "/home" },
+    { "source": "/import-wallet", "destination": "/import-wallet" },
+    { "source": "/generate-new-wallet", "destination": "/generate-new-wallet" },
+    { "source": "/settings", "destination": "/settings" },
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}
