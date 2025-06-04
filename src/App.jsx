@@ -5,7 +5,6 @@ import {
   RouterProvider,
   Navigate,
 } from "react-router-dom";
-import "./App.css";
 import HomePage from "./pages/home";
 import Layout from "./components/layout";
 import Setting from "./pages/settings";
