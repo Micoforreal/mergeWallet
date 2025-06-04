@@ -5,14 +5,8 @@ import './styles/wallet-adapter.css'
 import App from './App.jsx'
 import SolanaWalletProvider from './components/SolanaWalletProvider'
 import { WalletContextProvider } from './context/walletConnection'
-
 import { Buffer } from 'buffer'
 window.Buffer = Buffer;
-
-import { Buffer } from 'buffer';
-window.Buffer = Buffer;
-
-
 // Error boundary for wallet connection errors
 class ErrorBoundary extends React.Component {
   constructor(props) {

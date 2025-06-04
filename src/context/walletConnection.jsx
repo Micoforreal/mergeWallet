@@ -36,17 +36,6 @@ console.log("BTC Balance:", btcBalance / 1e8); // in BTC
     
 }
 
-const getBtcBalance = async (address) => {
-    const btcAddress = address;
-const response = await fetch(`https://blockstream.info/api/address/${btcAddress}`);
-const data = await response.json();
-
-const btcBalance = data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum;
-console.log("BTC Balance:", btcBalance / 1e8); // in BTC
-
-    
-}
-
 
 export const WalletContext = createContext({});
 
@@ -58,7 +47,6 @@ export const WalletContextProvider = ({children})=>{
 
         useEffect(()=>{
             const storedWalletData = localStorage.getItem("walletData");
-
             if (storedWalletData) {
                 setWalletData(JSON.parse(storedWalletData));
             }
