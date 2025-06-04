@@ -11,6 +11,9 @@ import { ethers } from "ethers";
 import * as bitcoin from "bitcoinjs-lib";
 import { HDKey } from "@scure/bip32";
 
+import { generatekeypair } from "@/helpers/generateWallet";
+
+
 const fakePrase = [
   "abandon",
   "ability",
@@ -88,6 +91,7 @@ const btcPrivateKeyHex = Buffer.from(btcNode.privateKey).toString('hex');
   localStorage.setItem("walletData", JSON.stringify(data));
 };
 
+
 const SavePhrase = ({ mnemonic }) => {
   const [verificationStatus, setVerificationStatus] = useState("not-copied");
   const [copied, setCopied] = useState(false);
@@ -97,7 +101,6 @@ const SavePhrase = ({ mnemonic }) => {
     setTimeout(() => setCopied(false), 2000);
     setVerificationStatus("copied");
   };
-
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <h2 className="text-lg font-semibold mb-2">Save Your Phrase</h2>
@@ -180,6 +183,26 @@ const createUsername = (setUsernameOption) => (
 );
 
 
+const FinishStep = ({ navigate, mnemonic }) => {
+  const [isCreating, setIsCreating] = useState(false);
+
+
+  const handleFinish = async () => {
+    setIsCreating(true);
+    await generatekeypair(mnemonic);
+    // Simulate wallet creation
+    setTimeout(() => {
+      setIsCreating(false);
+      navigate("/home");
+    }, 2000);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full">
+      <h2 className="text-lg font-semibold mb-2">Wallet Ready!</h2>
+      <p className="text-center mb-6">
+        Your secure wallet has been created successfully.
+      </p>
 
 
 const FinishStep = ({ navigate,mnemonic }) => {
@@ -221,11 +244,31 @@ const FinishStep = ({ navigate,mnemonic }) => {
 };
 
 
+      <div className="w-full space-y-6">
+        <div className="p-4 bg-green-50 rounded-md text-center">
+          <Check className="w-8 h-8 text-green-600 mx-auto mb-2" />
+          <p className="text-sm text-green-700">
+            Your wallet is ready to use. Remember to keep your recovery phrase
+            safe and never share it with anyone.
+          </p>
+        </div>
+
+        <Button className="w-full" onClick={handleFinish} disabled={isCreating}>
+          {isCreating ? "Finalizing Setup..." : "Go to Wallet Dashboard"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 const GenerteNewWallet = () => {
   const [usernameOption, setUsernameOption] = useState("create");
   const [mnemonic, setMnemonic] = useState();
 
+  const navigate = useNavigate();
+
     const navigate = useNavigate();
+
   const generatePhrase = async () => {
     const phrase = bip39.generateMnemonic();
 
@@ -235,6 +278,26 @@ const GenerteNewWallet = () => {
     generatePhrase();
   }, []);
   const steps = [
+
+    {
+      title: "Backup",
+      description: "Save Recovery Phrase",
+      stepLogo: <LockKeyhole className="w-4 h-4" />,
+      item: <SavePhrase mnemonic={mnemonic} />,
+    },
+    {
+      title: "Profile",
+      description: "Choose Username",
+      stepLogo: <UserPenIcon className="w-4 h-4" />,
+      item: createUsername(setUsernameOption),
+    },
+    {
+      title: "Finish",
+      description: "Complete Setup",
+      stepLogo: <Check className="w-4 h-4" />,
+      item: <FinishStep navigate={navigate} mnemonic={mnemonic} />,
+    },
+
   { 
     title: "Backup", 
     description: "Save Recovery Phrase", 
@@ -254,6 +317,7 @@ const GenerteNewWallet = () => {
     item:  <FinishStep navigate={navigate} mnemonic={mnemonic}/>
     
   }
+
     // {  description: "Verify your email", stepLogo:<Home className="w-4 h-4"/>, item:"2"},
     // { title: "Step 4", description: "Confirm and finish" },
   ];

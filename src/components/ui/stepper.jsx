@@ -50,7 +50,7 @@ const Step = ({ title, description, stepLogo, isCompleted, isActive }) => {
         ))}
       </div>
      
-    
+
         </>
   )
 }

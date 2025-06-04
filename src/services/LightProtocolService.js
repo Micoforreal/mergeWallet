@@ -26,6 +26,7 @@ export class LightProtocolService {
     
     // Setup network status listeners
     this._setupNetworkListeners();
+
     
     // Attempt to load the Light Protocol SDK
     this._loadLightProtocolSDK();
@@ -34,7 +35,31 @@ export class LightProtocolService {
   /**
    * Setup event listeners for online/offline status
    * @private
+
+   * 
+   * 
+   * 
    */
+
+
+
+//   async setupMerkleTree() {
+//     console.log("Setting up Merkle Tree...");
+    
+//     const treeKeypair = Keypair.generate();
+//     const treeConfig = {
+//         maxDepth: 14, // Max number of NFTs tree can hold
+//         maxBufferSize: 64, // How many changes can happen in parallel
+//         treeCreator: new PublicKey(this.connection.payer.publicKey),
+//     };
+
+//     const tx = await createTree(this.connection, this.connection.payer, treeKeypair, treeConfig);
+//     console.log("Merkle Tree Created:", tx);
+
+//     this.merkleTree = treeKeypair.publicKey.toString(); // Store the tree reference
+// }
+
+
   _setupNetworkListeners() {
     window.addEventListener('online', () => {
       console.log('Network connection restored');

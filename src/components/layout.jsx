@@ -6,7 +6,7 @@ import { useContext, useEffect } from "react";
 const Layout = ({children}) => {
    
     return ( 
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto min-h-screen ">
 
 
             <main>
