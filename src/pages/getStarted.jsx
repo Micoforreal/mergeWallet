@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 const CreateAccount = () => {
     return ( 
         <>
-    <div className="flex max-w-md mx-auto h-screen flex-col items-center  ">
+    <div className="flex max-w-md mx-auto min-h-screen flex-col items-center  ">
         <h1 className="text-3xl font-bold text-center mt-10">Merge Wallet</h1>
         <img src="/logoDark.png" className="my-10"/>
         <h4 className="text-2xl  text-center mt-5">Trusted username based multichain wallet</h4>
@@ -16,11 +16,13 @@ const CreateAccount = () => {
              <Button  className={'text-lg w-full h-12 rounded-4xl'}>Create Wallet</Button>
             </Link>
 
+            <Link to={'/import-wallet'}>
             <Button variant={'outline'} 
             onClick={() => {
             }}
             className={'text-lg border-2 w-full h-12 rounded-4xl'}>Import Existing Wallet</Button>
             {/* {RenderCreateAccount()} */}
+            </Link>
         </div>
     </div>
 

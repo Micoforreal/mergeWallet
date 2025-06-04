@@ -1,13 +1,8 @@
-/**
- * v0 by Vercel.
- * @see https://v0.dev/t/vNFNac6Wshl
- * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
- */
+
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useSolanaWallet } from "@/helpers/connectSolanaWallet";
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useState, useEffect, useCallback,useContext } from "react";
 import LightProtocolService from "@/services/LightProtocolService";
@@ -19,19 +14,10 @@ import RecieveToken from "@/components/recieveToken";
 import AlertToGetUsername from "@/components/alertToGetUsername";
 
 export default function HomePage() {
-    const { 
-      publicKey, 
-      connected, 
-      hasWalletAdapters,
-      error: walletError,
-      wallet,
-      connectWallet, 
-      disconnectWallet, 
-      getFormattedAddress 
-    } = useSolanaWallet();
+
     
     // Light Protocol service for username storage
-    const [lightService] = useState(() => new LightProtocolService());
+    const lightService =  LightProtocolService;
     
     // User information state
     const [username, setUsername] = useState('');
@@ -51,19 +37,18 @@ export default function HomePage() {
     // Transaction states
     const [recipientUsername, setRecipientUsername] = useState('');
     const [sendAmount, setSendAmount] = useState('');
-    const [swapFromAmount, setSwapFromAmount] = useState('');
-    const [swapToAmount, setSwapToAmount] = useState('');
+
     const [isUsernameValid, setIsUsernameValid] = useState(false);
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
     
     // Clear error message when wallet connection changes
-    useEffect(() => {
-      if (walletError) {
-        setErrorMessage(walletError);
-      } else {
-        setErrorMessage('');
-      }
-    }, [walletError]);
+    // useEffect(() => {
+    //   if (walletError) {
+    //     setErrorMessage(walletError);
+    //   } else {
+    //     setErrorMessage('');
+    //   }
+    // }, [walletError]);
 
     const connect = async ()=>{
       setWalletData(publicData)
@@ -75,99 +60,99 @@ export default function HomePage() {
     },[])
     
     // Check if we need to show the username modal and load existing username
-    useEffect(() => {
-      if (connected && publicKey) {
-        // Try to load existing username
-        const fetchUsername = async () => {
-          try {
-            const existingUsername = await lightService.getUsername(publicKey);
+    // useEffect(() => {
+    //   if (connected && publicKey) {
+    //     // Try to load existing username
+    //     const fetchUsername = async () => {
+    //       try {
+    //         const existingUsername = await lightService.getUsername(publicKey);
             
-            if (existingUsername) {
-              setSavedUsername(existingUsername);
-              setShowUsernameModal(false);
-            } else {
-              // No username found for this wallet, show the modal
-              setShowUsernameModal(true);
-            }
-          } catch (error) {
-            console.error("Error fetching username:", error);
-            setShowUsernameModal(true);
-          }
-        };
+    //         if (existingUsername) {
+    //           setSavedUsername(existingUsername);
+    //           setShowUsernameModal(false);
+    //         } else {
+    //           // No username found for this wallet, show the modal
+    //           setShowUsernameModal(true);
+    //         }
+    //       } catch (error) {
+    //         console.error("Error fetching username:", error);
+    //         setShowUsernameModal(true);
+    //       }
+    //     };
         
-        fetchUsername();
-      } else {
-        setShowUsernameModal(false);
-        setSavedUsername('');
-      }
-    }, [connected, publicKey, lightService]);
+    //     fetchUsername();
+    //   } else {
+    //     setShowUsernameModal(false);
+    //     setSavedUsername('');
+    //   }
+    // }, [connected, publicKey, lightService]);
     
     // Handle wallet connection
-    const handleConnectWallet = async () => {
-        if (connected) {
-            await disconnectWallet();
-            setSavedUsername('');
-        } else {
-            const error = await connectWallet();
-            if (error) {
-              setErrorMessage(error.message || 'Failed to connect wallet');
-            }
-        }
-    };
+    // const handleConnectWallet = async () => {
+    //     if (connected) {
+    //         await disconnectWallet();
+    //         setSavedUsername('');
+    //     } else {
+    //         const error = await connectWallet();
+    //         if (error) {
+    //           setErrorMessage(error.message || 'Failed to connect wallet');
+    //         }
+    //     }
+    // };
     
     // Save username using Light Protocol
-    const handleSaveUsername = useCallback(async () => {
-      if (!username.trim() || !publicKey) {
-        setErrorMessage('Username cannot be empty');
-        return;
-      }
+    // const handleSaveUsername = useCallback(async () => {
+    //   if (!username.trim() || !publicKey) {
+    //     setErrorMessage('Username cannot be empty');
+    //     return;
+    //   }
       
-      // Validate username format
-      if (!config.USERNAME_REGEX.test(username)) {
-        setErrorMessage('Username can only contain letters, numbers, underscores, and dashes');
-        return;
-      }
+    //   // Validate username format
+    //   if (!config.USERNAME_REGEX.test(username)) {
+    //     setErrorMessage('Username can only contain letters, numbers, underscores, and dashes');
+    //     return;
+    //   }
       
-      // Validate username length
-      if (username.length > config.MAX_USERNAME_LENGTH) {
-        setErrorMessage(`Username cannot be longer than ${config.MAX_USERNAME_LENGTH} characters`);
-        return;
-      }
+    //   // Validate username length
+    //   if (username.length > config.MAX_USERNAME_LENGTH) {
+    //     setErrorMessage(`Username cannot be longer than ${config.MAX_USERNAME_LENGTH} characters`);
+    //     return;
+    //   }
       
-      try {
-        setIsSubmitting(true);
-        setErrorMessage('');
-        setRegistrationStep('creating-account');
+    //   try {
+    //     setIsSubmitting(true);
+    //     setErrorMessage('');
+    //     setRegistrationStep('creating-account');
         
-        // Check if username already exists
-        const exists = await lightService.usernameExists(username);
-        if (exists) {
-          setErrorMessage('Username already taken. Please choose another.');
-          setIsSubmitting(false);
-          setRegistrationStep('initial');
-          return;
-        }
+    //     // Check if username already exists
+    //     const exists = await lightService.usernameExists(username);
+    //     if (exists) {
+    //       setErrorMessage('Username already taken. Please choose another.');
+    //       setIsSubmitting(false);
+    //       setRegistrationStep('initial');
+    //       return;
+    //     }
         
-        // Initialize Light Account if needed
-        await lightService.initLightAccount(publicKey);
+    //     // Initialize Light Account if needed
+    //     await lightService.initLightAccount(publicKey);
         
-        // Create a compressed NFT for the username
-        setRegistrationStep('minting');
-        await lightService.createUsernameNFT(publicKey, username);
+    //     // Create a compressed NFT for the username
+    //     setRegistrationStep('minting');
+    //     await lightService.createUsernameNFT(publicKey, username);
         
-        // Username saved successfully
-        setSavedUsername(username);
-        setShowUsernameModal(false);
-        setRegistrationStep('initial');
+    //     // Username saved successfully
+    //     setSavedUsername(username);
+    //     setShowUsernameModal(false);
+    //     setRegistrationStep('initial');
         
-      } catch (error) {
-        console.error('Error saving username:', error);
-        setErrorMessage('Failed to save username: ' + error.message);
-        setRegistrationStep('initial');
-      } finally {
-        setIsSubmitting(false);
-      }
-    }, [username, publicKey, lightService]);
+    //   } catch (error) {
+    //     console.error('Error saving username:', error);
+    //     setErrorMessage('Failed to save username: ' + error.message);
+    //     setRegistrationStep('initial');
+    //   } finally {
+    //     setIsSubmitting(false);
+    //   }
+    // }, [username, publicKey, lightService]);
     
     // Handle wallet actions
     const handleReceive = () => {
@@ -281,7 +266,7 @@ export default function HomePage() {
     };
     
   return (
-    <div className="max-w-md mx-auto p-6 bg-white min-h-screen">
+    <div className="max-w-md mx-auto p-6 bg-white ">
       <div className="flex items-center justify-between mb-8 border-b pb-4">
         <div className="flex items-center space-x-3">
           <DropdownMenu>
@@ -294,13 +279,13 @@ export default function HomePage() {
               </Avatar>
             </DropdownMenuTrigger>
           </DropdownMenu>
-          {connected ? (
+          {walletData ? (
             <div className="flex flex-col">
               {savedUsername ? (
                 <span className="font-medium text-gray-900">@{savedUsername}</span>
               ) : (
                 // <></>
-                <span className="font-medium text-gray-900">{wallet?.adapter?.name || "Solana Wallet"}</span>
+                <span className="font-medium text-gray-900">{ "Solana Wallet"}</span>
               )}
               <div className="flex items-center">
                 {/* <span className="text-xs text-gray-500">{getFormattedAddress()}</span> */}
@@ -313,14 +298,14 @@ export default function HomePage() {
         <Badge variant="outline" className="text-xs font-normal border-gray-200 text-gray-600">devnet</Badge>
       </div>
       
-      {connected ? (
+      {walletData ? (
         <div className="text-center mb-8">
-          <div className="text-3xl font-bold text-gray-900 mb-1">$00.00</div>
+          <div className="text-3xl font-bold text-gray-900 mb-1">$174,934.99</div>
           <div className="text-sm text-gray-500 flex items-center justify-center">
             {savedUsername ? (
               <span className="font-medium">@{savedUsername}</span>
             ) : (
-              <span>{getFormattedAddress()}</span>
+              <span>{"address"}</span>
             )}
             <Button
               variant="ghost"
@@ -336,7 +321,7 @@ export default function HomePage() {
               <span className="sr-only">Copy</span>
             </Button>
           </div>
-          {!savedUsername && connected && (
+          {walletData && (
             <div className="mt-3">
               <Button 
                 variant="outline" 
@@ -377,7 +362,7 @@ export default function HomePage() {
         </div>
       )}
       
-      {connected && (
+      {walletData && (
         <>
           <div className="grid grid-cols-3 gap-3 mb-8">
           <RecieveToken/>

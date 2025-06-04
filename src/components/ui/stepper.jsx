@@ -49,15 +49,7 @@ const Step = ({ title, description, stepLogo, isCompleted, isActive }) => {
           </React.Fragment>
         ))}
       </div>
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => onStepChange(currentStep - 1)} disabled={currentStep === 0}>
-          Previous
-        </Button>
-        <Button onClick={() => onStepChange(currentStep + 1)} disabled={currentStep === steps.length - 1}>
-          {currentStep === steps.length - 1 ? "Finish" : "Next"}
-        </Button>
-      </div>
-    
+     
         </>
   )
 }

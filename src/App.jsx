@@ -9,20 +9,25 @@ import "./App.css";
 import HomePage from "./pages/home";
 import Layout from "./components/layout";
 import Setting from "./pages/settings";
-import CreateAccount from "./pages/createAccount";
+import CreateAccount from "./pages/getStarted";
 import GenerateNewWallet from "./pages/generateNewWallet";
+import ImportWallet from "./pages/importWallet";
+
+
+
 
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/">
-        <Route index element={<Navigate to="/create-account" replace />} />
-        <Route path="create-account" element={<CreateAccount />} />
+        <Route index element={<Navigate to="/get-started" replace />} />
+        <Route path="get-started" element={<CreateAccount />} />
         <Route
           path="generate-new-wallet"
           exact
           element={<GenerateNewWallet />}
         />
+        <Route path="import-wallet" exact element={<ImportWallet />} />
 
         <Route element={<Layout />}>
           <Route path="home" exact element={<HomePage />} />

@@ -3,7 +3,7 @@ import Navigation from "./navigation";
 
 const Layout = ({children}) => {
     return ( 
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto min-h-screen ">
 
 
             <main>

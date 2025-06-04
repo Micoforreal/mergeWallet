@@ -4,6 +4,7 @@ import path from "path"
 import { fileURLToPath } from 'url'
 import tailwindcss from '@tailwindcss/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import {NodeGlobalsPolyfillPlugin} from '@esbuild-plugins/node-globals-polyfill'
 
 // Get the directory name of the current module
 const __filename = fileURLToPath(import.meta.url)
@@ -34,6 +35,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     esbuildOptions: {
+      plugins: [
+         NodeGlobalsPolyfillPlugin({
+          buffer: true,
+        }),
+      ],
       // Node.js global to browser globalThis
       define: {
         global: 'globalThis',
