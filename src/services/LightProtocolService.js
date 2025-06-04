@@ -1,7 +1,7 @@
 import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import config from '../config/lightProtocol';
 import StorageService from './StorageService';
-// import { createTree } from "@metaplex-foundation/mpl-bubblegum";
+
 /**
  * Light Protocol service for username storage using ZK compressed NFTs
  */
@@ -26,7 +26,7 @@ export class LightProtocolService {
     
     // Setup network status listeners
     this._setupNetworkListeners();
-    // this.setupMerkleTree()
+
     
     // Attempt to load the Light Protocol SDK
     this._loadLightProtocolSDK();
@@ -35,6 +35,7 @@ export class LightProtocolService {
   /**
    * Setup event listeners for online/offline status
    * @private
+
    * 
    * 
    * 

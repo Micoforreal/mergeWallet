@@ -25,7 +25,7 @@ const Step = ({ title, description, stepLogo, isCompleted, isActive }) => {
         <p className={cn("text-sm font-medium", isActive || isCompleted ? "text-foreground" : "text-muted-foreground")}>
           {title}
         </p>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="text-[11px] text-muted-foreground">{description}</p>}
       </div>
     </div>
   )
@@ -35,7 +35,7 @@ const Step = ({ title, description, stepLogo, isCompleted, isActive }) => {
   return (
     <>
     {/* // <div className="w-full max-w-3xl mx-auto"> */}
-      <div        className={cn("flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8", className)} >
+      <div        className={cn("flex flex-col md:flex-row justify-betwee justify-evenly items-start md:items-center gap-4 mb-8", className)} >
         {steps.map((step, index) => (
           <React.Fragment key={step.title}>
             <Step
@@ -50,6 +50,7 @@ const Step = ({ title, description, stepLogo, isCompleted, isActive }) => {
         ))}
       </div>
      
+
         </>
   )
 }

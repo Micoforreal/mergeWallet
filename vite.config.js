@@ -4,6 +4,7 @@ import path from "path"
 import { fileURLToPath } from 'url'
 import tailwindcss from '@tailwindcss/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+
 import {NodeGlobalsPolyfillPlugin} from '@esbuild-plugins/node-globals-polyfill'
 
 // Get the directory name of the current module
@@ -15,16 +16,32 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    nodePolyfills({
-      // Whether to polyfill `node:` protocol imports.
-      protocolImports: true,
-      // Polyfills for specific Node.js globals and modules
-      globals: {
-        Buffer: true,
-        global: true,
-      },
-    }),
+    // nodePolyfills({
+    //   // Whether to polyfill `node:` protocol imports.
+    //   protocolImports: true,
+    //   // Polyfills for specific Node.js globals and modules
+    //   globals: {
+    //     Buffer: true,
+    //     global: true,
+    //   },
+    // }),
   ],
+  
+  // build: {
+  //   commonjsOptions: {
+  //     include: [/node_modules/],
+  //     transformMixedEsModules: true
+  //   },
+  //   rollupOptions: {
+  //     plugins: [
+  //       // Enable rollup polyfills plugin
+  //       // used during production bundling
+  //       rollupNodePolyFill()
+  //     ]
+  //   }
+  // },
+
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -35,11 +52,23 @@ export default defineConfig({
   },
   optimizeDeps: {
     esbuildOptions: {
+
       plugins: [
          NodeGlobalsPolyfillPlugin({
           buffer: true,
         }),
       ],
+
+   
+ 
+      plugins: [
+        NodeGlobalsPolyfillPlugin({
+          buffer:true
+        }),
+        // nodeModulesPolyfillPlugin()
+      ],
+    
+
       // Node.js global to browser globalThis
       define: {
         global: 'globalThis',
