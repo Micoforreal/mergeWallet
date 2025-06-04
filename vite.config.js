@@ -53,11 +53,7 @@ export default defineConfig({
   optimizeDeps: {
     esbuildOptions: {
 
-      plugins: [
-         NodeGlobalsPolyfillPlugin({
-          buffer: true,
-        }),
-      ],
+     
 
    
  
